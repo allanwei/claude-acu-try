@@ -1,0 +1,9 @@
+{
+  "name": "acumatica",
+  "version": "1.0.0",
+  "description": "Interact with Acumatica ERP using natural language — read, write, update, and report across Finance, Inventory, and CRM.",
+  "author": {
+    "name": "allanwei"
+  },
+  "keywords": ["erp", "acumatica", "finance", "inventory", "crm"]
+}

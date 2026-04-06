@@ -10,11 +10,5 @@
       "description": "Acumatica ERP MCP server"
     }
   ],
-  "skills": [
-    "skills/acumatica-setup.md",
-    "skills/acumatica-finance.md",
-    "skills/acumatica-inventory.md",
-    "skills/acumatica-crm.md",
-    "skills/acumatica-reports.md"
-  ]
+  "skills": "skills/"
 }

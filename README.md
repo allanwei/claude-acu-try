@@ -1,6 +1,6 @@
-# Acumatica Claude Plugin
+# Acumatica Plugin
 
-A Claude Code plugin that lets business users interact with [Acumatica ERP](https://www.acumatica.com/) using natural language. Read, write, update, and report across Finance, Inventory/Purchasing, and CRM modules.
+A plugin for [Claude Cowork](https://www.anthropic.com/) and [Claude Code](https://claude.ai/code) that lets business users interact with [Acumatica ERP](https://www.acumatica.com/) using natural language. Read, write, update, and report across Finance, Inventory/Purchasing, and CRM modules.
 
 ## What You Can Do
 
@@ -23,11 +23,19 @@ Ask Claude things like:
 
 ## Requirements
 
-- [Claude Code](https://claude.ai/code) desktop app or CLI
+- [Claude Cowork](https://www.anthropic.com/) desktop app **or** [Claude Code](https://claude.ai/code) CLI
 - Node.js 20+
 - An Acumatica instance with API access enabled
 
 ## Installation
+
+### Claude Cowork (recommended)
+
+1. Download `acumatica.plugin` from the [Releases](https://github.com/allanwei/claude-acu-try/releases) page.
+2. In Cowork, open **Settings → Plugins → Install from file** and select `acumatica.plugin`.
+3. Cowork automatically builds the MCP server on first use.
+
+### Claude Code (manual)
 
 1. Clone this repository:
    ```bash
@@ -35,9 +43,9 @@ Ask Claude things like:
    cd claude-acu-try
    ```
 
-2. Install MCP server dependencies:
+2. Install and build the MCP server:
    ```bash
-   cd mcp-server && npm install
+   cd mcp-server && npm install && npm run build
    ```
 
 3. Register the plugin in Claude Code by pointing it at `plugin.json`.
@@ -97,8 +105,11 @@ What invoices are overdue this month?
 ## Architecture
 
 ```
-claude-acumatica-plugin/
-├── plugin.json              Plugin manifest (MCP server + skills)
+acumatica-plugin/
+├── .claude-plugin/
+│   └── plugin.json          Cowork plugin manifest
+├── .mcp.json                MCP server config (Cowork)
+├── plugin.json              Claude Code plugin manifest
 ├── mcp-server/              Node.js/TypeScript MCP server
 │   └── src/
 │       ├── index.ts         10 MCP tools
@@ -109,7 +120,12 @@ claude-acumatica-plugin/
 │       ├── client.ts        Acumatica REST API client
 │       ├── modules/         Finance / Inventory / CRM type registries
 │       └── reports.ts       Report ID mapping + query summarization
-└── skills/                  5 natural-language skill guides
+└── skills/                  5 domain skills (Cowork & Claude Code)
+    ├── acumatica-setup/
+    ├── acumatica-finance/
+    ├── acumatica-inventory/
+    ├── acumatica-crm/
+    └── acumatica-reports/
 ```
 
 ## Available MCP Tools
