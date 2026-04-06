@@ -86,6 +86,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
           filter: { type: 'string', description: "OData $filter expression, e.g. Status eq 'Open'" },
           top: { type: 'number', description: 'Max records to return (default 50)' },
           select: { type: 'array', items: { type: 'string' }, description: 'Fields to return' },
+          expand: { type: 'array', items: { type: 'string' }, description: 'Related entities to expand' },
         },
         required: ['type'],
       },
@@ -187,7 +188,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           if (!config.username || !config.password) throw new Error('Username and password required for basic auth.');
           basicSession = new BasicAuthSession(config.instanceUrl, config.company);
           await basicSession.login(config.username, config.password);
-          client.setBasicAuth(basicSession.getCookie()!);
+          const cookie = basicSession.getCookie();
+          if (!cookie) throw new Error('Login succeeded but no session cookie was returned from Acumatica.');
+          client.setBasicAuth(cookie);
         } else {
           if (!config.clientId || !config.clientSecret) throw new Error('clientId and clientSecret required for OAuth.');
           oauthSession = new OAuthSession(config.instanceUrl);

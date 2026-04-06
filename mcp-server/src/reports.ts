@@ -21,6 +21,7 @@ export function resolveReportEntity(reportId: string): string {
 /**
  * Run a named report by its Acumatica report ID.
  * Maps the report ID to the corresponding inquiry entity and fetches records.
+ * Note: only `parameters.filter` (OData $filter string) is currently used; other keys are ignored.
  */
 export async function runReport(
   client: AcumaticaClient,
