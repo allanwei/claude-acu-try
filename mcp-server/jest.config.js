@@ -9,4 +9,5 @@ export default {
     '^.+\\.tsx?$': ['ts-jest', { useESM: true }],
   },
   testMatch: ['**/tests/**/*.test.ts'],
+  watchman: false,
 };
