@@ -1,6 +1,5 @@
 import axios from 'axios';
 import * as http from 'http';
-import * as url from 'url';
 import * as crypto from 'crypto';
 import open from 'open';
 import type { AcumaticaConfig, OAuthTokens } from '../types.js';
@@ -69,23 +68,59 @@ export class OAuthSession {
 
   private _waitForCode(authUrl: string, state: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      const server = http.createServer((req, res) => {
-        const parsed = url.parse(req.url ?? '', true);
-        if (parsed.pathname !== '/callback') return;
+      const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
-        const { code, state: returnedState, error } = parsed.query;
+      const server = http.createServer((req, res) => {
+        const parsed = new URL(req.url ?? '/', `http://localhost:${REDIRECT_PORT}`);
+        if (parsed.pathname !== '/callback') {
+          res.writeHead(404);
+          res.end();
+          return;
+        }
+
+        const code = parsed.searchParams.get('code');
+        const returnedState = parsed.searchParams.get('state');
+        const error = parsed.searchParams.get('error');
+
+        if (error) {
+          res.writeHead(400, { 'Content-Type': 'text/html' });
+          res.end(`<h1>Authorization failed: ${error}. You may close this tab.</h1>`);
+          server.close();
+          clearTimeout(timer);
+          return reject(new Error(`OAuth error: ${error}`));
+        }
+        if (returnedState !== state) {
+          res.writeHead(400, { 'Content-Type': 'text/html' });
+          res.end('<h1>Authorization failed: state mismatch. You may close this tab.</h1>');
+          server.close();
+          clearTimeout(timer);
+          return reject(new Error('OAuth state mismatch'));
+        }
+        if (!code) {
+          res.writeHead(400, { 'Content-Type': 'text/html' });
+          res.end('<h1>Authorization failed: no code returned. You may close this tab.</h1>');
+          server.close();
+          clearTimeout(timer);
+          return reject(new Error('No code returned'));
+        }
+
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end('<h1>Authorization complete. You may close this tab.</h1>');
         server.close();
-
-        if (error) return reject(new Error(`OAuth error: ${error}`));
-        if (returnedState !== state) return reject(new Error('OAuth state mismatch'));
-        if (!code) return reject(new Error('No code returned'));
-        resolve(code as string);
+        clearTimeout(timer);
+        resolve(code);
       });
 
+      const timer = setTimeout(() => {
+        server.close();
+        reject(new Error('OAuth authorization timed out after 5 minutes.'));
+      }, TIMEOUT_MS);
+
       server.listen(REDIRECT_PORT, () => open(authUrl));
-      server.on('error', reject);
+      server.on('error', (err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
     });
   }
 
@@ -106,6 +141,9 @@ export class OAuthSession {
   }
 
   private _toTokens(data: Record<string, unknown>): OAuthTokens {
+    if (data.error) {
+      throw new Error(`Token endpoint error: ${data.error}${data.error_description ? ` — ${data.error_description}` : ''}`);
+    }
     const expiresIn = (data.expires_in as number) ?? 3600;
     return {
       accessToken: data.access_token as string,
