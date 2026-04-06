@@ -79,4 +79,58 @@ describe('AcumaticaClient error handling', () => {
     const client = makeClient();
     await expect(client.create('Invoice', {})).rejects.toThrow('Amount must be positive');
   });
+
+  it('throws SESSION_EXPIRED with code on 401', async () => {
+    nock(BASE).get(`${API}/Invoice/X`).reply(401);
+    const client = makeClient();
+    let err: Error & { code?: string } | null = null;
+    try {
+      await client.get('Invoice', 'X');
+    } catch (e) {
+      err = e as Error & { code?: string };
+    }
+    expect(err).not.toBeNull();
+    expect(err?.message).toMatch(/Session expired/);
+    expect(err?.code).toBe('SESSION_EXPIRED');
+  });
+
+  it('throws server error on 500', async () => {
+    nock(BASE).get(`${API}/Invoice/X`).reply(500);
+    const client = makeClient();
+    await expect(client.get('Invoice', 'X')).rejects.toThrow('Acumatica server error (500)');
+  });
+});
+
+describe('AcumaticaClient.action', () => {
+  it('posts to action endpoint', async () => {
+    nock(BASE).post(`${API}/Invoice/INV001/Release`).reply(204);
+    const client = makeClient();
+    await expect(client.action('Invoice', 'INV001', 'Release')).resolves.toBeUndefined();
+  });
+});
+
+describe('AcumaticaClient auth headers', () => {
+  it('sends Bearer token when set via setOAuthToken', async () => {
+    nock(BASE)
+      .get(`${API}/Invoice/INV001`)
+      .matchHeader('authorization', 'Bearer mytoken123')
+      .reply(200, { ReferenceNbr: 'INV001' });
+
+    const client = new AcumaticaClient(BASE, COMPANY);
+    client.setOAuthToken('mytoken123');
+    const result = await client.get('Invoice', 'INV001');
+    expect(result).toEqual({ ReferenceNbr: 'INV001' });
+  });
+
+  it('sends Cookie header when set via setBasicAuth', async () => {
+    nock(BASE)
+      .get(`${API}/Invoice/INV001`)
+      .matchHeader('cookie', 'ASP.NET_SessionId=xyz')
+      .reply(200, { ReferenceNbr: 'INV001' });
+
+    const client = new AcumaticaClient(BASE, COMPANY);
+    client.setBasicAuth('ASP.NET_SessionId=xyz');
+    const result = await client.get('Invoice', 'INV001');
+    expect(result).toEqual({ ReferenceNbr: 'INV001' });
+  });
 });
