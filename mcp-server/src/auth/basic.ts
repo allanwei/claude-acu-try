@@ -33,10 +33,10 @@ export class BasicAuthSession {
     }
 
     const setCookie = resp.headers['set-cookie'];
-    if (setCookie && setCookie.length > 0) {
-      // Extract only the name=value part of the first cookie
-      this._cookie = setCookie[0].split(';')[0];
+    if (!setCookie || setCookie.length === 0) {
+      throw new Error('Login succeeded but no session cookie was returned.');
     }
+    this._cookie = setCookie[0].split(';')[0];
   }
 
   async logout(): Promise<void> {

@@ -27,6 +27,15 @@ describe('BasicAuthSession.login', () => {
     const session = new BasicAuthSession(BASE_URL, COMPANY);
     await expect(session.login('admin', 'wrong')).rejects.toThrow('Invalid credentials');
   });
+
+  it('throws on 403 forbidden', async () => {
+    nock(BASE_URL)
+      .post('/TestCo/entity/auth/login')
+      .reply(403, { message: 'Access denied' });
+
+    const session = new BasicAuthSession(BASE_URL, COMPANY);
+    await expect(session.login('admin', 'pass')).rejects.toThrow('Access denied');
+  });
 });
 
 describe('BasicAuthSession.logout', () => {
