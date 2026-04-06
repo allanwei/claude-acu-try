@@ -1,0 +1,7 @@
+node_modules/
+# dist/ is excluded globally; explicitly include mcp-server/dist so the plugin is runnable without a build step
+!mcp-server/dist/
+*.js.map
+.env
+*.local
+.claude/
